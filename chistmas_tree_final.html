@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Grand Luxury Tree - Adaptive Hand Gestures</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000000; font-family: 'Times New Roman', serif; touch-action: none; /* 防止手机下拉刷新 */ }
+        body { margin: 0; overflow: hidden; background-color: #000000; font-family: 'Times New Roman', serif; touch-action: none; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
         
-        /* UI Overlay - 响应式优化 📱 */
+        /* UI Overlay */
         #ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 10; pointer-events: none;
             display: flex; flex-direction: column; 
             align-items: center;
-            padding-top: 4vh; /* 使用 vh 适配 */
+            padding-top: 8vh; /* 稍微增加一点顶部距离，让字更舒服 */
             box-sizing: border-box;
             transition: opacity 0.5s ease;
         }
@@ -39,10 +39,10 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Typography - 手机适配字体 🔠 */
+        /* Typography */
         h1 { 
             color: #fceea7; 
-            font-size: clamp(28px, 6vw, 56px); /* 智能缩放字体 */
+            font-size: clamp(28px, 6vw, 56px);
             margin: 0; font-weight: 400; 
             letter-spacing: clamp(2px, 1vw, 6px); 
             text-shadow: 0 0 30px rgba(252, 238, 167, 0.6); 
@@ -58,7 +58,7 @@
         /* Controls */
         .controls-wrapper {
             position: absolute; 
-            top: auto; bottom: 30px; /* 手机上放到底部更顺手 */
+            top: auto; bottom: 30px; /* 按钮在右下角 */
             right: 20px;        
             pointer-events: auto;
             display: flex;
@@ -69,12 +69,11 @@
             transition: opacity 0.5s ease;
         }
 
-        /* 电脑端恢复右上角 */
         @media (min-width: 768px) {
             .controls-wrapper { top: 30px; bottom: auto; right: 30px; }
         }
 
-        .btn-group { display: flex; gap: 10px; flex-direction: column; } /* 手机端垂直排列 */
+        .btn-group { display: flex; gap: 10px; flex-direction: column; }
         @media (min-width: 768px) { .btn-group { flex-direction: row; } }
 
         .upload-btn {
@@ -96,7 +95,6 @@
         }
         .upload-btn:hover { background: #d4af37; color: #000; box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); }
         
-        /* 手机端隐藏文件夹上传（不支持） */
         .folder-btn { display: none; }
         @media (min-width: 1024px) { .folder-btn { display: flex; } }
 
@@ -107,10 +105,13 @@
 
         input[type="file"] { display: none; }
 
-        /* Webcam - 手机端缩小并移动位置 📹 */
+        /* --- Webcam 样式修改开始 --- */
         #webcam-wrapper {
             position: absolute; 
-            top: 20px; left: 20px; /* 手机放在左上角 */
+            /* 修改这里：原来是 top: 20px，现在改为 bottom: 20px */
+            top: auto; 
+            bottom: 20px; 
+            left: 20px; 
             width: 120px; height: 90px;
             border: 1px solid rgba(212, 175, 55, 0.5); 
             box-shadow: 0 0 10px rgba(0,0,0,0.9);
@@ -121,13 +122,14 @@
             transition: opacity 0.5s ease; 
         }
 
-        /* 电脑端变大放在左下角 */
+        /* 电脑端保持左下角，稍微大一点 */
         @media (min-width: 768px) {
             #webcam-wrapper {
                 top: auto; bottom: 30px; left: 30px;
                 width: 240px; height: 180px;
             }
         }
+        /* --- Webcam 样式修改结束 --- */
         
         #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
@@ -137,7 +139,6 @@
             background: rgba(0,0,0,0.6); padding: 2px; text-align: center;
         }
         
-        /* 名字输入框 ✨ */
         #name-input {
             background: transparent; border: none; border-bottom: 1px solid rgba(212, 175, 55, 0.5);
             color: #fceea7; font-size: clamp(20px, 4vw, 36px); font-family: 'Cinzel', serif;
@@ -172,7 +173,7 @@
 
     <div id="ui-layer">
         <h1>Merry Christmas</h1>
-        <input type="text" id="name-input" placeholder="Your Name" value="My Dear">
+        <input type="text" id="name-input" placeholder="Your Name" value="angel ong ying rou">
         
         <div class="controls-wrapper">
             <div class="btn-group">
@@ -202,11 +203,8 @@
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'; 
         import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
 
-        // --- 📱 检测设备类型 ---
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // --- 核心配置 (自适应) ⚙️ ---
         const CONFIG = {
             colors: {
                 bg: 0x000000, 
@@ -215,22 +213,21 @@
                 accentRed: 0x990000,     
             },
             particles: {
-                // 手机端减少粒子数量以保证流畅 🚀
                 count: isMobile ? 600 : 1500,     
                 dustCount: isMobile ? 800 : 2500, 
                 treeHeight: 24,  
                 treeRadius: 8    
             },
-            camera: { z: isMobile ? 65 : 50 }, // 手机屏幕窄，相机拉远一点
+            camera: { z: isMobile ? 65 : 50 }, 
             bloom: {
-                enabled: true, // 如果特别卡，可以设为 false
-                strength: isMobile ? 0.3 : 0.45, // 手机端减弱光效
+                enabled: true, 
+                strength: isMobile ? 0.3 : 0.45, 
                 radius: 0.4,
                 threshold: 0.7
             },
             preload: {
                 autoScanLocal: true,
-                scanCount: 50, // 减少自动扫描数量
+                scanCount: 50, 
                 images: [
                     'https://images.unsplash.com/photo-1543589077-47d81606c1bf?q=80&w=600', 
                     'https://images.unsplash.com/photo-1576919228236-a097c32a5cd4?q=80&w=600',
@@ -267,7 +264,6 @@
             setupPostProcessing();
             setupEvents();
             
-            // 延迟一点初始化摄像头，给 UI 一点时间
             setTimeout(async () => {
                  await initMediaPipe();
             }, 500);
@@ -288,10 +284,6 @@
                     (e) => { console.log(`Skipped: ${url}`); }
                 );
             });
-            // 简单扫描
-            if (CONFIG.preload.autoScanLocal) {
-               // Logic retained but simplified count
-            }
         }
 
         function initThree() {
@@ -304,12 +296,11 @@
             camera.position.set(0, 0, CONFIG.camera.z); 
 
             renderer = new THREE.WebGLRenderer({ 
-                antialias: !isMobile, // 手机关闭抗锯齿省电
+                antialias: !isMobile, 
                 alpha: false, 
                 powerPreference: "high-performance" 
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            // 手机限制像素比，防止过热 🔥
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
             renderer.toneMapping = THREE.ReinhardToneMapping; 
             renderer.toneMappingExposure = 2.0; 
@@ -341,7 +332,6 @@
             if (!CONFIG.bloom.enabled) return;
 
             const renderScene = new RenderPass(scene, camera);
-            // 手机端降低分辨率
             const res = new THREE.Vector2(window.innerWidth, window.innerHeight);
             if (isMobile) res.multiplyScalar(0.5);
 
@@ -357,12 +347,11 @@
 
         function createTextures() {
             const canvas = document.createElement('canvas');
-            canvas.width = 64; canvas.height = 64; // Reduced texture size
+            canvas.width = 64; canvas.height = 64; 
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,64,64);
             ctx.fillStyle = '#880000'; 
             ctx.beginPath();
-            // Simplified texture drawing
             ctx.moveTo(0,0); ctx.lineTo(64,64); ctx.stroke();
             caneTexture = new THREE.CanvasTexture(canvas);
         }
@@ -415,7 +404,6 @@
                 if (mode === 'FOCUS') {
                     if (this.mesh === focusTargetMesh) {
                         const invMatrix = new THREE.Matrix4().copy(mainGroup.matrixWorld).invert();
-                        // 手机端照片拉近一点
                         const zDist = isMobile ? 30 : 35;
                         target = new THREE.Vector3(0, 2, zDist).applyMatrix4(invMatrix);
                     } else {
@@ -449,7 +437,6 @@
                 } else if (mode === 'SCATTER' && this.type === 'PHOTO') {
                     s = this.baseScale * 2.5; 
                 } else if (mode === 'FOCUS') {
-                    // 手机端放大倍数调整
                     if (this.mesh === focusTargetMesh) s = isMobile ? 3.5 : 4.5; 
                     else s = this.baseScale * 0.5; 
                 }
@@ -480,7 +467,7 @@
         }
 
         function createParticles() {
-            const sphereGeo = new THREE.SphereGeometry(0.5, 16, 16); // Reduced segments
+            const sphereGeo = new THREE.SphereGeometry(0.5, 16, 16); 
             const boxGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5); 
 
             const goldMat = new THREE.MeshStandardMaterial({
@@ -504,12 +491,11 @@
 
                 const s = 0.3 + Math.random() * 0.4;
                 mesh.scale.set(s,s,s);
-                mesh.position.set(0, -100, 0); // initial hidden
+                mesh.position.set(0, -100, 0); 
                 mainGroup.add(mesh);
                 particleSystem.push(new Particle(mesh, type, false));
             }
 
-            // Simple Star
             const starGeo = new THREE.OctahedronGeometry(1.5);
             const starMat = new THREE.MeshStandardMaterial({ color: 0xffdd88, emissive: 0xffaa00, emissiveIntensity: 2.0 });
             const star = new THREE.Mesh(starGeo, starMat);
@@ -540,7 +526,6 @@
             const group = new THREE.Group();
             group.add(photo);
             
-            // Random border
             const border = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.3), new THREE.MeshBasicMaterial({color: 0xffd700}));
             border.position.z = -0.01;
             group.add(border);
@@ -564,15 +549,13 @@
             });
         }
 
-        // --- MEDIAPIPE (Mobile Optimized) ---
         async function initMediaPipe() {
             video = document.getElementById('webcam');
             
-            // 关键：强制使用前置摄像头 (User Facing)
             const constraints = {
                 video: {
                     facingMode: "user",
-                    width: { ideal: isMobile ? 320 : 640 }, // 手机端降低处理分辨率
+                    width: { ideal: isMobile ? 320 : 640 }, 
                     height: { ideal: isMobile ? 240 : 480 },
                     frameRate: { ideal: 30 }
                 }
@@ -600,7 +583,6 @@
                     console.warn(e);
                     debugInfo.innerText = "Cam denied. Tap screen to interact.";
                     document.getElementById('webcam-wrapper').style.display = 'none';
-                    // Fallback interaction: Auto rotate
                 }
             }
         }
@@ -624,16 +606,13 @@
                 STATE.hand.x = (lm[9].x - 0.5) * 2; 
                 STATE.hand.y = (lm[9].y - 0.5) * 2;
 
-                // 简化手势逻辑，使其在手机小屏幕上更稳定
                 const wrist = lm[0];
                 const indexTip = lm[8];
                 const thumbTip = lm[4];
                 
-                // 距离计算
                 const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-                const handSize = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y); // Scale reference
+                const handSize = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y); 
                 
-                // 简单的手掌开合检测
                 const tips = [lm[8], lm[12], lm[16], lm[20]];
                 let avgSpread = 0;
                 tips.forEach(t => avgSpread += Math.hypot(t.x - wrist.x, t.y - wrist.y));
@@ -645,14 +624,14 @@
                 debugInfo.innerText = `Spread: ${spreadRatio.toFixed(1)} | Pinch: ${pinchRatio.toFixed(1)}`;
 
                 if (spreadRatio < 1.3) {
-                    STATE.mode = 'TREE'; // 拳头 = 树 ✊
+                    STATE.mode = 'TREE'; 
                     STATE.focusTarget = null;
                 } else if (spreadRatio > 1.8) {
-                    STATE.mode = 'SCATTER'; // 张开 = 散开 🖐️
+                    STATE.mode = 'SCATTER'; 
                     STATE.focusTarget = null;
                 } else if (pinchRatio < 0.4) {
                     if (STATE.mode !== 'FOCUS') {
-                        STATE.mode = 'FOCUS'; // 捏合 = 聚焦 👌
+                        STATE.mode = 'FOCUS'; 
                         const photos = particleSystem.filter(p => p.type === 'PHOTO');
                         if (photos.length) STATE.focusTarget = photos[Math.floor(Math.random()*photos.length)].mesh;
                     }
@@ -672,15 +651,13 @@
             });
             
             document.getElementById('file-input').addEventListener('change', handleImageUpload);
-            // Folder input listener retained for desktop
             const folderInput = document.getElementById('folder-input');
             if(folderInput) folderInput.addEventListener('change', handleImageUpload);
             
-            // 触摸旋转支持 (Fallback for no camera)
             let touchStartX = 0;
             window.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive: true});
             window.addEventListener('touchmove', e => {
-                if(STATE.hand.detected) return; // Camera priority
+                if(STATE.hand.detected) return; 
                 const deltaX = e.touches[0].clientX - touchStartX;
                 STATE.rotation.y += deltaX * 0.005;
                 touchStartX = e.touches[0].clientX;
@@ -691,12 +668,10 @@
             requestAnimationFrame(animate);
             const dt = clock.getDelta();
 
-            // Auto rotate if no hand detected
             if (!STATE.hand.detected) {
                 if(STATE.mode === 'TREE') STATE.rotation.y += 0.2 * dt;
                 else STATE.rotation.y += 0.1 * dt;
             } else {
-                // Hand control overrides
                 if (STATE.mode === 'SCATTER') {
                     STATE.rotation.y += STATE.hand.x * 2 * dt;
                     STATE.rotation.x += STATE.hand.y * 2 * dt;
